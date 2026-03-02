@@ -6,6 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://dxix2ws3xbet8" path="res://sprites/Players/Player-Pink.png" id="3_sugp2"]
 [ext_resource type="Script" uid="uid://dhwe0nx2h8wky" path="res://scripts/ball.gd" id="4_tbgi4"]
 [ext_resource type="Texture2D" uid="uid://bef0cgfmiqixa" path="res://sprites/Balls/Ball-3.png" id="5_tefeu"]
+[ext_resource type="FontFile" uid="uid://b35kq00fyu4vg" path="res://fonts/Pixeled.ttf" id="7_o6xl0"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_tbgi4"]
 radius = 36.124783
@@ -64,6 +65,7 @@ shape = SubResource("CircleShape2D_tefeu")
 
 [node name="Ball" type="RigidBody2D" parent="." unique_id=2009160946]
 position = Vector2(267, 437)
+mass = 0.7
 physics_material_override = SubResource("PhysicsMaterial_tbgi4")
 gravity_scale = 0.0
 linear_damp_mode = 1
@@ -106,3 +108,28 @@ shape = SubResource("RectangleShape2D_tefeu")
 [node name="CollisionShape2D2" type="CollisionShape2D" parent="StaticBody2D" unique_id=1247732817]
 position = Vector2(1, 482)
 shape = SubResource("RectangleShape2D_tefeu")
+
+[node name="Score" type="Label" parent="." unique_id=1629285831]
+offset_left = 416.0
+offset_top = 9.0
+offset_right = 550.0
+offset_bottom = 74.0
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("7_o6xl0")
+theme_override_font_sizes/font_size = 23
+text = "0 : 0"
+horizontal_alignment = 1
+
+[node name="Score2" type="Label" parent="." unique_id=1670857842]
+visible = false
+offset_left = 203.0
+offset_top = 222.0
+offset_right = 553.0
+offset_bottom = 354.0
+scale = Vector2(1.5, 1.5)
+theme_override_colors/font_color = Color(1, 0.12941177, 1, 1)
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("7_o6xl0")
+theme_override_font_sizes/font_size = 23
+text = "Player 1 Wins"
+horizontal_alignment = 1
