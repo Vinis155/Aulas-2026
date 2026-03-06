@@ -16,7 +16,7 @@ radius = 120.04629
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_tbgi4"]
 friction = 0.0
-bounce = 2.0
+bounce = 1.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_o6xl0"]
 radius = 36.013885
@@ -68,6 +68,8 @@ position = Vector2(267, 437)
 mass = 0.7
 physics_material_override = SubResource("PhysicsMaterial_tbgi4")
 gravity_scale = 0.0
+contact_monitor = true
+max_contacts_reported = 4
 linear_damp_mode = 1
 script = ExtResource("4_tbgi4")
 metadata/_edit_group_ = true
