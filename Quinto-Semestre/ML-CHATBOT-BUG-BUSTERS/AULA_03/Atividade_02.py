@@ -4,6 +4,15 @@ from sklearn.model_selection import train_test_split
 
 # 1. Preparação (Usando as features da Aula 02)
 # Supondo que o df já tenha as colunas: 'qtd_exclamacao', 'tem_palavra_alerta', 'tamanho_msg'
+# Corrigindo o erro: criando um DataFrame de exemplo 'df'
+data = {
+    'qtd_exclamacao': [1, 0, 2, 0, 1, 3, 0, 1, 0, 2],
+    'tem_palavra_alerta': [1, 0, 1, 0, 0, 1, 0, 1, 0, 1],
+    'tamanho_msg': [50, 20, 120, 30, 80, 150, 25, 60, 40, 100],
+    'rotulo': [1, 0, 1, 0, 0, 1, 0, 0, 0, 1]
+}
+df = pd.DataFrame(data)
+
 X = df[['qtd_exclamacao', 'tem_palavra_alerta', 'tamanho_msg']]
 y = df['rotulo'] # 1: Alta Prioridade, 0: Comum
 

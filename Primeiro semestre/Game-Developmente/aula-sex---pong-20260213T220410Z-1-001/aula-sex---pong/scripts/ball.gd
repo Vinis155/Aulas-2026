@@ -25,10 +25,7 @@ func _physics_process(delta: float) -> void:
 	score()
 	_win()
 
-
-# ==============================
 # DETECTA COLISÕES
-# ==============================
 func _integrate_forces(state):
 
 	for i in range(state.get_contact_count()):
@@ -44,10 +41,7 @@ func _integrate_forces(state):
 
 		last_collider = collider
 
-
-		# ==============================
 		# PLAYER 1
-		# ==============================
 		if collider.name == "Player":
 
 			print("Colidiu com Player")
@@ -74,11 +68,7 @@ func _integrate_forces(state):
 
 			last_player = "Player"
 
-
-
-		# ==============================
 		# PLAYER 2
-		# ==============================
 		elif collider.name == "Player2":
 
 			print("Colidiu com Player2")
@@ -139,17 +129,24 @@ func score():
 
 func _win():
 
-	if score_p1 >= 3:
+	# Evita verificar vitória no 0x0 inicial
+	if score_p1 == 0 and score_p2 == 0:
+		return
+
+	# Player 1 vence
+	if score_p1 >= 3 and score_p1 - score_p2 >= 2:
 		$"../Score2".text = "Player 1 Wins"
 		$"../Score2".show()
 		freeze = true
 		game_over = true
 
-	if score_p2 >= 3:
+	# Player 2 vence
+	if score_p2 >= 3 and score_p2 - score_p1 >= 2:
 		$"../Score2".text = "Player 2 Wins"
 		$"../Score2".show()
 		freeze = true
 		game_over = true
 
+	# Reiniciar jogo
 	if Input.is_key_pressed(KEY_SPACE) and game_over:
 		get_tree().reload_current_scene()
