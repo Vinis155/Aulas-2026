@@ -19,26 +19,23 @@ intencoes = [
     "horario"
 ]
 
-# TODO criar vetorizador
-vetorizador = ___________
+# criar vetorizador
+vetorizador = CountVectorizer()
 
-# TODO transformar frases em vetores
-X = ___________
+# transformar frases em vetores
+X = vetorizador.fit_transform(frases)
 
-# TODO treinar modelo Naive Bayes
-modelo = ___________
+# treinar modelo Naive Bayes
+modelo = MultinomialNB()
+modelo.fit(X, intencoes)
 
-# TODO pedir frase do usuário
+# pedir frase do usuário
 entrada = input("Digite sua mensagem: ")
 
-# TODO transformar entrada em vetor
-entrada_vetor = ___________
+# transformar entrada em vetor
+entrada_vetor = vetorizador.transform([entrada])
 
-# TODO prever intenção
-predicao = ___________
+# prever intenção
+predicao = modelo.predict(entrada_vetor)
 
 print("Intenção detectada:", predicao[0])
-
-#Resultado esperado:
-# Digite sua mensagem: quero saber horário
-# Intenção detectada: horario

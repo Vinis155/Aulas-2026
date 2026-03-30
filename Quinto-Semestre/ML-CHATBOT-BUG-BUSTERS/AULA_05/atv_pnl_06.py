@@ -2,11 +2,11 @@ from collections import Counter
 
 texto = "chatbot chatbot inteligência artificial chatbot aprendizado"
 
-# TODO: transformar texto em lista de palavras
-palavras = ___________
+# transformar texto em lista de palavras
+palavras = texto.split()
 
-# TODO: calcular frequência
-frequencia = ___________
+# calcular frequência
+frequencia = Counter(palavras)
 
 print(frequencia)
 

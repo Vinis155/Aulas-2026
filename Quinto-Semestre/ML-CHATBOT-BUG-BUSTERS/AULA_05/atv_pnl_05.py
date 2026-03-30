@@ -2,11 +2,11 @@
 
 texto = "machine learning é importante para inteligência artificial"
 
-# TODO: dividir o texto em palavras
-palavras = ___________
+# dividir o texto em palavras
+palavras = texto.split()
 
-# TODO: contar quantas palavras existem
-quantidade = ___________
+# contar quantas palavras existem
+quantidade = len(palavras)
 
 print("Número de palavras:", quantidade)
 

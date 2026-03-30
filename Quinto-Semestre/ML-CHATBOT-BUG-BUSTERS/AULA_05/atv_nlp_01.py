@@ -1,6 +1,16 @@
 import nltk
+import ssl
 
-# Baixar pacote necessário para tokenização
+# Contornar problema com certificado SSL em alguns ambientes
+try:
+    _create_unverified_https_context = ssl._create_unverified_context
+except AttributeError:
+    pass
+else:
+    ssl._create_default_https_context = _create_unverified_https_context
+
+# Baixar pacote necessário para tokenização (força download)
+print("Baixando recursos NLTK necessários...")
 nltk.download('punkt_tab')
 
 # Importar tokenizador de palavras
