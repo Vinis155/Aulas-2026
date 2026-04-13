@@ -15,7 +15,7 @@ var coins = 0
 
 @onready var anim: AnimatedSprite2D = $AnimatedSprite2D  
 # Referência ao nó de animação
-
+@onready var death_line = $"../DeathLine"
 func _ready() -> void:
 	pass  # Executa quando o jogo inicia (não usado aqui)
 		
@@ -55,6 +55,9 @@ func move(delta):
 		
 	move_and_slide()  # Aplica o movimento com colisão
 	
+	if global_position.y >= death_line.global_position.y and is_alive:
+		die()
+	
 	pass
 	
 func animations():
@@ -80,18 +83,21 @@ func animations():
 
 
 func die ():
-	is_alive = false  # Marca como morto
 	
-	anim.play("hit")  # Animação de dano/morte
-	
-	$Area2D.queue_free()  # Remove área de colisão (não toma mais dano)
-	$CollisionShape2D.queue_free()  # Remove colisão física
-	
-	velocity.y = jump_velocity -300  # Faz o player "voar" pra cima ao morrer
-	
-	await get_tree().create_timer(1).timeout  # Espera 1 segundo
-	
-	get_tree().reload_current_scene()  # Reinicia a fase
+	if is_alive:
+		
+		is_alive = false  # Marca como morto
+		
+		anim.play("hit")  # Animação de dano/morte
+		
+		$Area2D.queue_free()  # Remove área de colisão (não toma mais dano)
+		$CollisionShape2D.queue_free()  # Remove colisão física
+		
+		velocity.y = jump_velocity -300  # Faz o player "voar" pra cima ao morrer
+		
+		await get_tree().create_timer(1).timeout  # Espera 1 segundo
+		
+		get_tree().reload_current_scene()  # Reinicia a fase
 	
 	pass
 	

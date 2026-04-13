@@ -1,0 +1,26 @@
+// Definição do provider e URL de conexão
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Geração do cliente Prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Modelo de Filme
+model Filme {
+  id       Int     @id @default(autoincrement())
+  nome     String
+  sinopse  String
+  duracao  Int
+  genero   String
+  capaUrl  String?
+  
+  // Timestamps para auditoria (opcional mas útil)
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@map("filmes")
+}
