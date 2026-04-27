@@ -695,13 +695,10 @@ metadata/_edit_group_ = true
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="box" unique_id=1487189308]
 sprite_frames = SubResource("SpriteFrames_gwsl1")
-animation = &"hit"
+animation = &"idle"
 autoplay = "idle"
-frame = 3
-frame_progress = 1.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="box" unique_id=1031175256]
-visible = false
 shape = SubResource("RectangleShape2D_lkded")
 
 [node name="Area2D" type="Area2D" parent="box" unique_id=1875680614]

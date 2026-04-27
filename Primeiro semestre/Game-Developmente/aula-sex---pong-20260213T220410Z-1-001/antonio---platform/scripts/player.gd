@@ -1,103 +1,81 @@
-extends CharacterBody2D  # Corpo ideal para player (movimento + colisão pronta)
+extends CharacterBody2D
 
-var speed = 160.0  # Velocidade horizontal do personagem
-var dir  # Direção (-1 esquerda, 1 direita, 0 parado)
+var speed = 160.0
+var dir
 
-var jump_velocity = -300.0  # Força do pulo (negativo sobe)
+var jump_velocity = -300.0
 
-var gravity = 980  # Gravidade aplicada ao personagem
+var gravity = 980
 
-var extra_jumps = 1  # Quantidade de pulos extras (pulo duplo)
+var extra_jumps = 1
 
-var is_alive = true  # Controla se o player está vivo
+@onready var anim: AnimatedSprite2D = $AnimatedSprite2D
+@onready var death_line = $"../deathline"
 
-var coins = 0
+var is_alive = true
 
-@onready var anim: AnimatedSprite2D = $AnimatedSprite2D  
-# Referência ao nó de animação
-@onready var death_line = $"../DeathLine"
 func _ready() -> void:
-	pass  # Executa quando o jogo inicia (não usado aqui)
-		
-		
+	pass
+
 func _physics_process(delta: float) -> void:
-	move(delta)  # Chama função de movimento
+	move(delta)
 	
 	if is_alive:
-		animations()  # Só anima se estiver vivo
+		animations()
 	
 	pass
-	
+
 func move(delta):
-	
 	if is_alive:
-		dir = Input.get_axis("left", "right")  
-		# Retorna -1, 0 ou 1 dependendo da tecla pressionada
-	
-	# Movimento horizontal
+		dir = Input.get_axis("left", "right")
 	if dir:
-		velocity.x = dir * speed  # Move para esquerda ou direita
+		velocity.x = dir * speed
 	elif dir == 0:
-		velocity.x = 0  # Para o personagem
+		velocity.x = 0
 		
-	# Gravidade
 	if not is_on_floor():
-		velocity.y += gravity * delta  # Faz o personagem cair
+		velocity.y += gravity * delta
 		
-	# Pulo (com pulo duplo)
 	if Input.is_action_just_pressed("jump") and extra_jumps > 0 and is_alive:
-		velocity.y = jump_velocity  # Aplica força do pulo
-		extra_jumps -= 1  # Consome um pulo
+		velocity.y = jump_velocity
+		extra_jumps -= 1
 		
-	# Reset do pulo ao tocar o chão
 	if is_on_floor():
 		extra_jumps = 1
-		
-	move_and_slide()  # Aplica o movimento com colisão
 	
 	if global_position.y >= death_line.global_position.y and is_alive:
 		die()
 	
+	move_and_slide()
 	pass
-	
+
 func animations():
-	# Correndo
 	if velocity.x != 0 and is_on_floor():
 		anim.play("run")
-		
-	# Parado
 	elif velocity.x == 0 and is_on_floor():
 		anim.play("idle")
 		
-	# Pulando
 	if not is_on_floor() and extra_jumps >= 1:
 		anim.play("jump")
 		
-	# Inverte sprite conforme direção
 	if dir > 0:
-		anim.flip_h = false  # Direita
+		anim.flip_h = false
 	elif dir < 0:
-		anim.flip_h = true   # Esquerda
+		anim.flip_h = true
 
 	pass
 
-
-func die ():
-	
+func die():
 	if is_alive:
+		is_alive = false
+		anim.play("hit")
+	
+		$Area2D.queue_free()
+		$CollisionShape2D.queue_free()
+		velocity.y = jump_velocity - 100
 		
-		is_alive = false  # Marca como morto
-		
-		anim.play("hit")  # Animação de dano/morte
-		
-		$Area2D.queue_free()  # Remove área de colisão (não toma mais dano)
-		$CollisionShape2D.queue_free()  # Remove colisão física
-		
-		velocity.y = jump_velocity -300  # Faz o player "voar" pra cima ao morrer
-		
-		await get_tree().create_timer(1).timeout  # Espera 1 segundo
-		
-		get_tree().reload_current_scene()  # Reinicia a fase
+		await get_tree().create_timer(1).timeout
+		get_tree().reload_current_scene()
 	
 	pass
 	
