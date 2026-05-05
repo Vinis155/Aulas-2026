@@ -4,8 +4,8 @@ BLOCO 2 — PIPELINE COMPLETO DE MACHINE LEARNING
 =============================================================================
 Projeto  : Sistema de Previsao de Risco Clinico
 Arquivo  : 2_pipeline_ml.py
-Entrada  : pacientes.csv
-Saidas   : graficos_comparacao.png | matriz_confusao.png | curva_roc.png
+Entrada  : ../05_Dados/pacientes.csv
+Saidas   : ../07_Graficos/*.png | ../06_Modelos/*.pkl
 
 Etapas executadas:
     1.  Leitura e inspecao do dataset
@@ -24,6 +24,7 @@ Etapas executadas:
             - Matriz de confusao do melhor modelo
             - Curva ROC multiclasse (OvR)
    10.  Predicao para um novo paciente ficticio
+   11.  SALVAR MODELO E SCALER PARA A API
 =============================================================================
 """
 
@@ -34,6 +35,7 @@ import matplotlib
 matplotlib.use("Agg")           # renderiza sem abrir janela (salva em arquivo)
 import matplotlib.pyplot as plt
 import joblib                   # para serializar modelo e scaler
+import os
 
 from sklearn.model_selection  import train_test_split, cross_val_score, StratifiedKFold
 from sklearn.preprocessing    import StandardScaler, label_binarize
@@ -45,6 +47,12 @@ from sklearn.metrics          import (
     confusion_matrix, ConfusionMatrixDisplay,
     roc_curve, auc
 )
+
+# ── CRIAR DIRETORIOS SE NAO EXISTIREM ───────────────────────────────────────
+output_dir_graficos = os.path.join(os.path.dirname(__file__), "..", "07_Graficos")
+output_dir_modelos = os.path.join(os.path.dirname(__file__), "..", "06_Modelos")
+os.makedirs(output_dir_graficos, exist_ok=True)
+os.makedirs(output_dir_modelos, exist_ok=True)
 
 # Estilo global dos graficos
 plt.rcParams.update({
@@ -70,13 +78,15 @@ print("=" * 62)
 print("  SISTEMA DE PREVISAO DE RISCO CLINICO — PIPELINE ML")
 print("=" * 62)
 
-
 # ════════════════════════════════════════════════════════════════
 # ETAPA 1 — LEITURA E INSPECAO DO DATASET
 # ════════════════════════════════════════════════════════════════
 print("\n[ETAPA 1] Lendo 'pacientes.csv'...")
 
-df = pd.read_csv("pacientes.csv")
+# Caminho relativo para o arquivo
+csv_path = os.path.join(os.path.dirname(__file__), "..", "05_Dados", "pacientes.csv")
+
+df = pd.read_csv(csv_path)
 
 print(f"  Shape            : {df.shape}  (linhas x colunas)")
 print(f"  Colunas          : {list(df.columns)}")
@@ -86,30 +96,25 @@ for cls, label in zip([0,1,2], ["Baixo","Medio","Alto"]):
     n = (df["risco"] == cls).sum()
     print(f"    {cls} ({label}): {n} registros  ({n/len(df)*100:.1f}%)")
 
-
 # ════════════════════════════════════════════════════════════════
 # ETAPA 2 — SEPARACAO DE FEATURES E TARGET
 # ════════════════════════════════════════════════════════════════
 print("\n[ETAPA 2] Separando features (X) e target (y)...")
 
-# Features: variaveis de entrada que o modelo usa para aprender
-# Target  : variavel que queremos prever (risco)
 FEATURES = ["idade", "glicose", "pressao", "imc", "colesterol"]
 
-X = df[FEATURES].values   # numpy array shape (2000, 5)
-y = df["risco"].values     # numpy array shape (2000,)
+X = df[FEATURES].values
+y = df["risco"].values
 
 print(f"  Features usadas : {FEATURES}")
 print(f"  Shape de X      : {X.shape}")
 print(f"  Shape de y      : {y.shape}  — classes: {np.unique(y)}")
-
 
 # ════════════════════════════════════════════════════════════════
 # ETAPA 3 — DIVISAO TREINO / TESTE
 # ════════════════════════════════════════════════════════════════
 print("\n[ETAPA 3] Dividindo em treino (80%) e teste (20%)...")
 
-# stratify=y: garante proporcao de cada classe em treino e teste
 X_train, X_test, y_train, y_test = train_test_split(
     X, y,
     test_size   = 0.20,
@@ -120,102 +125,53 @@ X_train, X_test, y_train, y_test = train_test_split(
 print(f"  Treino : {X_train.shape[0]} amostras")
 print(f"  Teste  : {X_test.shape[0]} amostras")
 
-
 # ════════════════════════════════════════════════════════════════
 # ETAPA 4 — NORMALIZACAO DOS DADOS
 # ════════════════════════════════════════════════════════════════
 print("\n[ETAPA 4] Normalizando com StandardScaler...")
-#
-# StandardScaler transforma cada feature para media=0 e desvio=1.
-# Isso e fundamental para modelos sensiveis a escala (Logistica, KNN).
-#
-# REGRA IMPORTANTE — evitar data leakage:
-#   fit_transform() no TREINO: calcula media/desvio do treino e transforma
-#   transform()     no TESTE : aplica os parametros do treino (sem recalcular)
 
 scaler = StandardScaler()
-X_train_sc = scaler.fit_transform(X_train)   # ajusta e transforma
-X_test_sc  = scaler.transform(X_test)        # so transforma
+X_train_sc = scaler.fit_transform(X_train)
+X_test_sc  = scaler.transform(X_test)
 
-# Exibe media e desvio aprendidos pelo scaler
 for i, feat in enumerate(FEATURES):
     print(f"  {feat:12s}  media={scaler.mean_[i]:7.2f}  desvio={scaler.scale_[i]:.2f}")
-
 
 # ════════════════════════════════════════════════════════════════
 # ETAPA 5 — DEFINICAO E TREINAMENTO DOS MODELOS
 # ════════════════════════════════════════════════════════════════
 print("\n[ETAPA 5] Treinando modelos...")
 
-# ── a) Regressao Logistica ─────────────────────────────────────
-# Modelo linear que estima probabilidades de cada classe usando
-# a funcao softmax (para multiclasse). Simples, interpretavel,
-# bom baseline. max_iter alto para garantir convergencia.
-lr = LogisticRegression(
-    solver       = "lbfgs",        # otimizador eficiente para multiclasse
-    max_iter     = 1000,           # iteracoes maximas
-    random_state = 42
-)
+lr = LogisticRegression(solver="lbfgs", max_iter=1000, random_state=42)
+rf = RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42, n_jobs=-1)
+knn = KNeighborsClassifier(n_neighbors=7, metric="euclidean")
 
-# ── b) Random Forest ──────────────────────────────────────────
-# Conjunto (ensemble) de arvores de decisao treinadas em subconjuntos
-# aleatorios dos dados. Robusto, bom com dados nao lineares.
-rf = RandomForestClassifier(
-    n_estimators = 100,    # numero de arvores
-    max_depth    = 10,     # profundidade maxima de cada arvore
-    random_state = 42,
-    n_jobs       = -1      # usa todos os nucleos do processador
-)
-
-# ── c) KNN — K-Nearest Neighbors ──────────────────────────────
-# Classifica com base nos K vizinhos mais proximos no espaco de features.
-# Nao tem treinamento explicito (lazy learner). Muito sensivel a escala,
-# por isso a normalizacao da Etapa 4 e essencial aqui.
-knn = KNeighborsClassifier(
-    n_neighbors = 7,         # K = 7 vizinhos
-    metric      = "euclidean"
-)
-
-# Dicionario {nome: instancia} para iterar facilmente
 modelos = {
     "Regressao Logistica": lr,
     "Random Forest"      : rf,
     "KNN"                : knn,
 }
 
-# Treina cada modelo com os dados normalizados de treino
 for nome_modelo, modelo in modelos.items():
     modelo.fit(X_train_sc, y_train)
     print(f"  [OK] {nome_modelo} treinado.")
-
 
 # ════════════════════════════════════════════════════════════════
 # ETAPA 6 — AVALIACAO DAS METRICAS
 # ════════════════════════════════════════════════════════════════
 print("\n[ETAPA 6] Avaliando metricas no conjunto de teste...\n")
 
-# Dicionario para guardar resultados de cada modelo
 resultados = {}
 
-# Cabecalho da tabela de resultados
 print(f"  {'Modelo':<22} {'Acuracia':>9} {'Precision':>10} {'Recall':>7} {'F1-Score':>9}")
 print("  " + "-" * 62)
 
 for nome_modelo, modelo in modelos.items():
-    # Predicao no conjunto de teste
     y_pred = modelo.predict(X_test_sc)
 
-    # Acuracia: percentual de predicoes corretas
     acc = accuracy_score(y_test, y_pred)
-
-    # Precision: dos que o modelo disse "positivo", quantos realmente eram?
-    # average="weighted" pondera pela frequencia de cada classe
     pre = precision_score(y_test, y_pred, average="weighted", zero_division=0)
-
-    # Recall: dos que realmente eram positivos, quantos o modelo acertou?
     rec = recall_score(y_test, y_pred, average="weighted", zero_division=0)
-
-    # F1-Score: media harmonica entre precision e recall
     f1  = f1_score(y_test, y_pred, average="weighted", zero_division=0)
 
     resultados[nome_modelo] = {
@@ -231,14 +187,11 @@ for nome_modelo, modelo in modelos.items():
 
 print()
 
-
 # ════════════════════════════════════════════════════════════════
 # ETAPA 7 — VALIDACAO CRUZADA K-FOLD (k=5)
 # ════════════════════════════════════════════════════════════════
 print("[ETAPA 7] Validacao cruzada (StratifiedKFold, k=5)...\n")
 
-# StratifiedKFold: divide em 5 partes mantendo proporcao das classes
-# Isso e mais confiavel do que uma unica divisao treino/teste
 kfold = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
 print(f"  {'Modelo':<22} {'Media CV':>9} {'Desvio CV':>10}")
@@ -257,13 +210,11 @@ for nome_modelo, modelo in modelos.items():
 
 print()
 
-
 # ════════════════════════════════════════════════════════════════
 # ETAPA 8 — COMPARACAO E SELECAO DO MELHOR MODELO
 # ════════════════════════════════════════════════════════════════
 print("[ETAPA 8] Comparacao e selecao do melhor modelo...")
 
-# Ordena pelo F1-Score ponderado (criterio principal para dados desbalanceados)
 ranking = sorted(resultados.items(), key=lambda x: x[1]["f1"], reverse=True)
 
 melhor_nome   = ranking[0][0]
@@ -276,7 +227,6 @@ for pos, (nome_m, dados) in enumerate(ranking, start=1):
 
 print(f"\n  >>> MELHOR MODELO: {melhor_nome} <<<")
 
-
 # ════════════════════════════════════════════════════════════════
 # ETAPA 9 — VISUALIZACOES
 # ════════════════════════════════════════════════════════════════
@@ -288,7 +238,7 @@ f1scores  = [resultados[n]["f1"]       for n in nomes_m]
 cv_medias = [resultados[n]["cv_media"]  for n in nomes_m]
 cores_barras = [CORES[n] for n in nomes_m]
 
-# ── FIGURA 1: Comparacao de metricas entre modelos ────────────────────────────
+# ── FIGURA 1: Comparacao de metricas entre modelos
 fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 fig.suptitle("Comparacao de Desempenho dos Modelos", fontsize=14, fontweight="bold", y=1.02)
 
@@ -306,19 +256,17 @@ for ax, (titulo, valores) in zip(axes, metricas.items()):
     ax.set_ylabel("Score")
     ax.set_xticks(range(len(nomes_m)))
     ax.set_xticklabels(nomes_m, rotation=15, ha="right", fontsize=9)
-    # Anota o valor em cima de cada barra
     for barra, val in zip(barras, valores):
         ax.text(barra.get_x() + barra.get_width()/2, barra.get_height() + 0.01,
                 f"{val:.3f}", ha="center", va="bottom", fontsize=10, fontweight="bold")
-    # Linha de referencia em 1.0
     ax.axhline(1.0, color="gray", linestyle="--", linewidth=0.8, alpha=0.6)
 
 plt.tight_layout()
-plt.savefig("graficos_comparacao.png", dpi=150, bbox_inches="tight")
+plt.savefig(os.path.join(output_dir_graficos, "graficos_comparacao.png"), dpi=150, bbox_inches="tight")
 plt.close()
 print("  [OK] 'graficos_comparacao.png' salvo.")
 
-# ── FIGURA 2: Matriz de confusao do melhor modelo ─────────────────────────────
+# ── FIGURA 2: Matriz de confusao do melhor modelo
 fig, ax = plt.subplots(figsize=(7, 6))
 
 cm = confusion_matrix(y_test, melhor_dados["y_pred"])
@@ -333,15 +281,12 @@ ax.set_xlabel("Classe Predita", fontsize=11)
 ax.set_ylabel("Classe Real", fontsize=11)
 
 plt.tight_layout()
-plt.savefig("matriz_confusao.png", dpi=150, bbox_inches="tight")
+plt.savefig(os.path.join(output_dir_graficos, "matriz_confusao.png"), dpi=150, bbox_inches="tight")
 plt.close()
 print("  [OK] 'matriz_confusao.png' salvo.")
 
-# ── FIGURA 3: Curva ROC multiclasse (One-vs-Rest) ─────────────────────────────
-# Binariza y_test: transforma [0,1,2] em 3 colunas binarias
+# ── FIGURA 3: Curva ROC multiclasse (One-vs-Rest)
 y_test_bin = label_binarize(y_test, classes=[0, 1, 2])
-
-# Probabilidades previstas pelo melhor modelo para cada classe
 y_prob = melhor_modelo.predict_proba(X_test_sc)
 
 fig, ax = plt.subplots(figsize=(8, 6))
@@ -353,7 +298,6 @@ for i, (label, cor) in enumerate(zip(LABELS_RISCO, cores_roc)):
     ax.plot(fpr, tpr, color=cor, lw=2,
             label=f"Risco {label}  (AUC = {roc_auc:.2f})")
 
-# Linha de referencia: classificador aleatorio
 ax.plot([0,1], [0,1], "k--", lw=1.2, label="Aleatorio (AUC = 0.50)")
 
 ax.set_title(f"Curva ROC Multiclasse (OvR)\n{melhor_nome}",
@@ -365,25 +309,22 @@ ax.set_xlim([0, 1])
 ax.set_ylim([0, 1.05])
 
 plt.tight_layout()
-plt.savefig("curva_roc.png", dpi=150, bbox_inches="tight")
+plt.savefig(os.path.join(output_dir_graficos, "curva_roc.png"), dpi=150, bbox_inches="tight")
 plt.close()
 print("  [OK] 'curva_roc.png' salvo.")
-
 
 # ════════════════════════════════════════════════════════════════
 # ETAPA 10 — PREDICAO PARA UM NOVO PACIENTE
 # ════════════════════════════════════════════════════════════════
 print("\n[ETAPA 10] Simulando predicao para um novo paciente...\n")
 
-# Dados de um paciente ficticio inseridos manualmente
-# (simula a tela de entrada do sistema descrito no documento tecnico)
 novo_paciente = {
     "nome"      : "Fernanda",
     "idade"     : 63,
-    "glicose"   : 148.0,   # acima do limiar de diabetes (126)
-    "pressao"   : 155.0,   # hipertensao estagio 2 (>= 140)
-    "imc"       : 31.5,    # obesidade grau I (>= 30)
-    "colesterol": 248.0,   # colesterol alto (>= 240)
+    "glicose"   : 148.0,
+    "pressao"   : 155.0,
+    "imc"       : 31.5,
+    "colesterol": 248.0,
 }
 
 print("  Dados do novo paciente:")
@@ -394,7 +335,6 @@ print(f"  {'Pressao':<14}: {novo_paciente['pressao']} mmHg")
 print(f"  {'IMC':<14}: {novo_paciente['imc']} kg/m2")
 print(f"  {'Colesterol':<14}: {novo_paciente['colesterol']} mg/dL")
 
-# Monta vetor de features na mesma ordem usada no treino
 entrada = np.array([[
     novo_paciente["idade"],
     novo_paciente["glicose"],
@@ -403,16 +343,12 @@ entrada = np.array([[
     novo_paciente["colesterol"]
 ]])
 
-# Normaliza com o MESMO scaler ajustado no treino
 entrada_sc = scaler.transform(entrada)
 
-# Predicao de classe e probabilidades
 classe_predita = melhor_modelo.predict(entrada_sc)[0]
 probabilidades = melhor_modelo.predict_proba(entrada_sc)[0]
 
-# Mapeamento de classe para rotulo textual
 rotulo_risco = {0: "BAIXO", 1: "MEDIO", 2: "ALTO"}
-emoji_risco  = {0: "verde ", 1: "amarelo", 2: "vermelho"}
 
 print()
 print("  " + "=" * 44)
@@ -432,21 +368,22 @@ print(f"  >> CLASSIFICACAO FINAL: RISCO {rotulo_risco[classe_predita]} <<")
 print("  " + "=" * 44)
 print()
 
-
 # ════════════════════════════════════════════════════════════════
 # ETAPA 11 — SALVAR MODELO E SCALER PARA A API
 # ════════════════════════════════════════════════════════════════
-print("\n[ETAPA 11] Salvando modelo e scaler para producao...")
+print("\n[ETAPA 11] Salvando modelo e scaler para producao...\n")
 
 # Salva o melhor modelo treinado
-joblib.dump(melhor_modelo, "melhor_modelo.pkl")
-print(f"  [OK] Modelo '{melhor_nome}' salvo como 'melhor_modelo.pkl'")
+modelo_path = os.path.join(output_dir_modelos, "melhor_modelo.pkl")
+joblib.dump(melhor_modelo, modelo_path)
+print(f"  [OK] Modelo '{melhor_nome}' salvo como '{modelo_path}'")
 
-# Salva o scaler para normalizar novos dados com os mesmos parametros
-joblib.dump(scaler, "scaler.pkl")
-print(f"  [OK] StandardScaler salvo como 'scaler.pkl'")
+# Salva o scaler para normalizar novos dados
+scaler_path = os.path.join(output_dir_modelos, "scaler.pkl")
+joblib.dump(scaler, scaler_path)
+print(f"  [OK] StandardScaler salvo como '{scaler_path}'")
 
-# Salva metadados para a API
+# Salva metadados
 metadados = {
     "melhor_modelo": melhor_nome,
     "features": FEATURES,
@@ -454,18 +391,21 @@ metadados = {
     "f1_score": float(melhor_dados["f1"]),
     "cv_media": float(melhor_dados["cv_media"]),
 }
-joblib.dump(metadados, "metadados_modelo.pkl")
-print(f"  [OK] Metadados salvos como 'metadados_modelo.pkl'")
+metadados_path = os.path.join(output_dir_modelos, "metadados_modelo.pkl")
+joblib.dump(metadados, metadados_path)
+print(f"  [OK] Metadados salvos como '{metadados_path}'")
 
 print()
 print("=" * 62)
 print("Pipeline concluido com sucesso.")
 print("\nArquivos gerados:")
-print("  - graficos_comparacao.png")
-print("  - matriz_confusao.png")
-print("  - curva_roc.png")
-print("  - melhor_modelo.pkl (modelo treinado)")
-print("  - scaler.pkl (normalizador)")
-print("  - metadados_modelo.pkl (informacoes do modelo)")
+print(f"  📊 Gráficos:  {output_dir_graficos}")
+print(f"     - graficos_comparacao.png")
+print(f"     - matriz_confusao.png")
+print(f"     - curva_roc.png")
+print(f"  🤖 Modelos:   {output_dir_modelos}")
+print(f"     - melhor_modelo.pkl (modelo treinado)")
+print(f"     - scaler.pkl (normalizador)")
+print(f"     - metadados_modelo.pkl (informacoes)")
 print("\n✅ Pronto para usar na API e Interface!")
 print("=" * 62)
