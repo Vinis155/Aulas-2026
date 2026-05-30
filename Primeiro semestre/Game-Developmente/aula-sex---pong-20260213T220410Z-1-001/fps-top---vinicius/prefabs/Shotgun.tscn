@@ -1,0 +1,34 @@
+[gd_scene format=3 uid="uid://b2wukghyqa5mc"]
+
+[ext_resource type="Script" uid="uid://dt2sepugl5l2h" path="res://scripts/shotgun.gd" id="1_fxpy6"]
+[ext_resource type="Texture2D" uid="uid://v34hucdg0u24" path="res://sprites/sprites/Guns.png" id="2_4ri5t"]
+[ext_resource type="PackedScene" uid="uid://sonbhs2gb0ed" path="res://prefabs/area_2d___bullet.tscn" id="2_gbcpp"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_choun"]
+radius = 8.0
+
+[node name="Shotgun" type="Node2D" unique_id=644201905]
+script = ExtResource("1_fxpy6")
+bullet_scene = ExtResource("2_gbcpp")
+damage = 60.0
+metadata/_edit_group_ = true
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=392200666]
+position = Vector2(13, 4)
+texture = ExtResource("2_4ri5t")
+region_enabled = true
+region_rect = Rect2(76, 20, 19, 6)
+
+[node name="Marker2D-bullet_marker" type="Marker2D" parent="Sprite2D" unique_id=1205601397]
+position = Vector2(7, 0)
+
+[node name="Area2D" type="Area2D" parent="." unique_id=2106649210]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=292083227]
+position = Vector2(12, 5)
+shape = SubResource("CircleShape2D_choun")
+
+[node name="Timer" type="Timer" parent="." unique_id=802436937]
+
+[connection signal="area_entered" from="Area2D" to="." method="_on_area_2d_area_entered"]
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]

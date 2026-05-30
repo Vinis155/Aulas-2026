@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://dvc8y360nbqcu"]
+
+[ext_resource type="Script" uid="uid://llj23l2g8qf8" path="res://scripts/arrow.gd" id="1_6ga5o"]
+[ext_resource type="Texture2D" uid="uid://ch5j4r5msehtb" path="res://sprites/sprites/Bow and Arrows.png" id="2_6ga5o"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_54s7l"]
+size = Vector2(5, 2)
+
+[node name="Area2D - bullet" type="Area2D" unique_id=1379165504 groups=["bullets"]]
+script = ExtResource("1_6ga5o")
+metadata/_edit_group_ = true
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1826647821]
+position = Vector2(0.5, 0)
+scale = Vector2(0.3125, 0.25)
+texture = ExtResource("2_6ga5o")
+region_enabled = true
+region_rect = Rect2(16, 35, 16, 8)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1186560721]
+position = Vector2(0.5, 0)
+shape = SubResource("RectangleShape2D_54s7l")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

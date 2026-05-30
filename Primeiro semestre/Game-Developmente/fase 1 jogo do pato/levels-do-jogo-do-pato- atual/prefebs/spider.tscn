@@ -1,0 +1,145 @@
+[gd_scene format=3 uid="uid://d3nx2grc6fh5p"]
+
+[ext_resource type="Script" uid="uid://cpayeni8w00bm" path="res://scripts/character_body_2d.gd" id="1_jeavk"]
+[ext_resource type="Texture2D" uid="uid://0j11pi6nwgnq" path="res://sprites/Aranha/Spider Sprite Sheet.png" id="2_atxbw"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sof0w"]
+atlas = ExtResource("2_atxbw")
+region = Rect2(64, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3qmij"]
+atlas = ExtResource("2_atxbw")
+region = Rect2(96, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kb5eu"]
+atlas = ExtResource("2_atxbw")
+region = Rect2(128, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lfy8a"]
+atlas = ExtResource("2_atxbw")
+region = Rect2(160, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ethxx"]
+atlas = ExtResource("2_atxbw")
+region = Rect2(192, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3o2xh"]
+atlas = ExtResource("2_atxbw")
+region = Rect2(224, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_duihb"]
+atlas = ExtResource("2_atxbw")
+region = Rect2(256, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ggavl"]
+atlas = ExtResource("2_atxbw")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ubhxj"]
+atlas = ExtResource("2_atxbw")
+region = Rect2(32, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_65or1"]
+atlas = ExtResource("2_atxbw")
+region = Rect2(64, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lhbbi"]
+atlas = ExtResource("2_atxbw")
+region = Rect2(96, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gjkv5"]
+atlas = ExtResource("2_atxbw")
+region = Rect2(128, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_00ld1"]
+atlas = ExtResource("2_atxbw")
+region = Rect2(160, 32, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_3qmij"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sof0w")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3qmij")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_kb5eu")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lfy8a")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ethxx")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3o2xh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_duihb")
+}],
+"loop": true,
+"name": &"die",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ggavl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ubhxj")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_65or1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lhbbi")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gjkv5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_00ld1")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_kb5eu"]
+size = Vector2(11, 7)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_lfy8a"]
+radius = 45.01111
+
+[node name="Spider" type="CharacterBody2D" unique_id=1274369284]
+collision_layer = 4
+collision_mask = 3
+script = ExtResource("1_jeavk")
+metadata/_edit_group_ = true
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1211186802]
+scale = Vector2(1, 0.875)
+sprite_frames = SubResource("SpriteFrames_3qmij")
+animation = &"walk"
+autoplay = "walk"
+frame_progress = 0.5709901
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1527805848]
+visible = false
+position = Vector2(-1, 10)
+shape = SubResource("RectangleShape2D_kb5eu")
+debug_color = Color(0.9607843, 0, 0, 0.41960785)
+
+[node name="VisionArea" type="Area2D" parent="." unique_id=421039859]
+position = Vector2(0, 7)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="VisionArea" unique_id=1496835437]
+visible = false
+position = Vector2(-1, 3)
+shape = SubResource("CircleShape2D_lfy8a")
+debug_color = Color(2.6471912e-06, 0.6323185, 0.45620716, 0.41960785)
+
+[connection signal="body_entered" from="VisionArea" to="." method="_on_vision_area_body_entered"]
+[connection signal="body_exited" from="VisionArea" to="." method="_on_vision_area_body_exited"]

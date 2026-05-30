@@ -2,7 +2,7 @@ extends CharacterBody2D
 
 @onready var sprite = $AnimatedSprite2D
 
-var speed = 40
+var speed = 60
 var direction = Vector2.ZERO
 var is_alive = true
 
@@ -21,6 +21,9 @@ func move():
 
 	move_and_slide()
 
+	global_position.x = clamp(global_position.x, 8, 320)
+	global_position.y = clamp(global_position.y, 0, 160)
+
 func anim():
 	if direction == Vector2.ZERO:
 		sprite.play("idle")
@@ -36,7 +39,7 @@ func anim():
 			sprite.play("walk_down")
 		else:
 			sprite.play("walk_up")
-			
+
 func die():
 	if is_alive:
 		is_alive = false

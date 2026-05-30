@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://d2nugv6fg5q3u"]
+
+[ext_resource type="Script" uid="uid://dgwuix0fds0km" path="res://scripts/crossbow.gd" id="1_t88ab"]
+[ext_resource type="PackedScene" uid="uid://dvc8y360nbqcu" path="res://prefabs/arrow.tscn" id="2_3ptty"]
+[ext_resource type="Texture2D" uid="uid://v34hucdg0u24" path="res://sprites/sprites/Guns.png" id="2_pw1x7"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_choun"]
+radius = 8.0
+
+[node name="Crossbow" type="Node2D" unique_id=644201905]
+script = ExtResource("1_t88ab")
+bullet_scene = ExtResource("2_3ptty")
+fire_time = 0.835
+damage = 70.0
+bullet_size = 2.0
+metadata/_edit_group_ = true
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=392200666]
+position = Vector2(13, 4)
+texture = ExtResource("2_pw1x7")
+region_enabled = true
+region_rect = Rect2(121, 4, 17, 8)
+
+[node name="Marker2D-bullet_marker" type="Marker2D" parent="Sprite2D" unique_id=1205601397]
+position = Vector2(7, 0)
+
+[node name="Area2D" type="Area2D" parent="." unique_id=2106649210]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=292083227]
+position = Vector2(12, 5)
+shape = SubResource("CircleShape2D_choun")
+
+[node name="Timer" type="Timer" parent="." unique_id=802436937]
+
+[connection signal="area_entered" from="Area2D" to="." method="_on_area_2d_area_entered"]
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]

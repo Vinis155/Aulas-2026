@@ -1,35 +1,37 @@
 extends Area2D
 
+signal died(pos: Vector2)
+
 @onready var sprite = $AnimatedSprite2D
 
 var speed = 30
 var velocity = Vector2.ZERO
 
-var life = 100
+var life = 90
 var is_alive = true
 
 func _physics_process(delta: float) -> void:
-	if is_alive:
+	if is_alive and is_inside_tree():
 		move(delta)
-		
-	pass
 
 func move(delta):
-	
+	if not is_inside_tree():
+		return
+
 	var player = get_tree().get_first_node_in_group("player")
-	
+
 	if not player:
 		return
 	
 	var direction = global_position.direction_to(player.global_position)
 
 	var push = Vector2.ZERO
-	for enemy in get_tree().get_nodes_in_group("enemies"):
+	for enemy in get_tree().get_nodes_in_group("enemies") if is_inside_tree() else []:
 		if enemy != self:
-			if global_position.distance_to(enemy.global_position) <40:
+			if global_position.distance_to(enemy.global_position) < 40:
 				push += enemy.global_position.direction_to(global_position)
 	
-	var final_direction = (direction + push).normalized()			
+	var final_direction = (direction + push).normalized()
 	
 	velocity = velocity.lerp(final_direction * speed, 0.1)
 	
@@ -42,7 +44,6 @@ func move(delta):
 
 
 func _on_area_entered(area: Area2D) -> void:
-	
 	if area.is_in_group("bullets"):
 		$AnimationPlayer.play("hit")
 		life -= area.damage
@@ -53,16 +54,14 @@ func _on_area_entered(area: Area2D) -> void:
 		
 	if area.get_parent().is_in_group("player"):
 		die()
-		area.get_parent().die()	
-	
-	pass # Replace with function body.
+		area.get_parent().die()
+
 func die():
-	
+	if not is_alive:
+		return
 	is_alive = false
 	sprite.play("death")
 	$CollisionShape2D.queue_free()
+	died.emit(global_position)
 	await get_tree().create_timer(1.0).timeout
 	queue_free()
-	
-	
-	pass

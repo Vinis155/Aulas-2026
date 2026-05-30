@@ -1,0 +1,94 @@
+[gd_scene format=3 uid="uid://bu5ihkywkkjgk"]
+
+[ext_resource type="PackedScene" uid="uid://daqscwmgqw7w4" path="res://addons/Basic CharacterBody3D/Player.tscn" id="1_ig7tw"]
+[ext_resource type="PackedScene" uid="uid://ccfp74vgsqqci" path="res://addons/kaykit_city_builder_bits/Assets/gltf/car_police.gltf" id="2_0xm2m"]
+[ext_resource type="Script" uid="uid://b76qymypaj7h4" path="res://scripts/car_base.gd" id="2_7mycd"]
+[ext_resource type="PackedScene" uid="uid://b27a6tuatrxso" path="res://addons/kaykit_city_builder_bits/Assets/gltf/building_G.gltf" id="3_lquwl"]
+[ext_resource type="PackedScene" uid="uid://oav5rmin324e" path="res://addons/kaykit_city_builder_bits/Assets/gltf/building_F_withoutBase.gltf" id="4_7mycd"]
+[ext_resource type="Script" uid="uid://ex6074osb0bt" path="res://scripts/camera_3d.gd" id="4_272bh"]
+[ext_resource type="PackedScene" uid="uid://bjqlxuhj4tgx5" path="res://addons/kaykit_city_builder_bits/Assets/gltf/building_E_withoutBase.gltf" id="5_272bh"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_7dm0k"]
+
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_ig7tw"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_lquwl"]
+size = Vector3(0.4550476, 0.34677124, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_7mycd"]
+size = Vector3(0.87402344, 0.328125, 0.117126465)
+
+[sub_resource type="Environment" id="Environment_5vw27"]
+background_mode = 1
+background_color = Color(0.5367417, 0.4004264, 0.33754525, 1)
+ssao_enabled = true
+ssao_radius = 0.1
+ssao_intensity = 16.0
+
+[node name="Main" type="Node3D" unique_id=502217686]
+metadata/_edit_lock_ = true
+
+[node name="Ground" type="MeshInstance3D" parent="." unique_id=1597256804]
+transform = Transform3D(26.220367, 0, 0, 0, 0.998134, 0, 0, 0, 24.787596, 0, 0, 0)
+mesh = SubResource("PlaneMesh_7dm0k")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Ground" unique_id=1190564660]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground/StaticBody3D" unique_id=506847655]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -3.487911)
+shape = SubResource("WorldBoundaryShape3D_ig7tw")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=10418428]
+transform = Transform3D(1, 0, 0, 0, 0.2033684, 0.97910225, 0, -0.97910225, 0.2033684, 0, 19.394482, 2.2522929)
+shadow_enabled = true
+
+[node name="Player" parent="." unique_id=855109756 instance=ExtResource("1_ig7tw")]
+transform = Transform3D(-0.247272, 0, 0.036831506, 0, 0.25, 0, -0.036831506, 0, -0.247272, 0.446846, 0.5217341, 6.2597)
+walk_speed = 1.0
+sprint_speed = 2.0
+jump_force = 2.0
+
+[node name="CarBase" type="CharacterBody3D" parent="." unique_id=1974464925 node_paths=PackedStringArray("camera_carro", "area_interacao", "jogador")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35340285, -0.16798207, 8.994759)
+script = ExtResource("2_7mycd")
+camera_carro = NodePath("CameraPivot/Camera3D")
+area_interacao = NodePath("CameraPivot/Area3D")
+jogador = NodePath("../Player")
+
+[node name="car_police2" parent="CarBase" unique_id=1621312630 instance=ExtResource("2_0xm2m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.23719421, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CarBase" unique_id=1046926656]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.016708374, 0.35742447, 0)
+shape = SubResource("BoxShape3D_lquwl")
+debug_color = Color(0.07450981, 0.12941177, 0.9019608, 0.9098039)
+
+[node name="CameraPivot" type="Node3D" parent="CarBase" unique_id=1587665993]
+
+[node name="Camera3D" type="Camera3D" parent="CarBase/CameraPivot" unique_id=1308242451]
+transform = Transform3D(-0.9961306, 6.9269284e-09, -0.087885976, -0.022401152, 0.9669704, 0.2539026, 0.08498313, 0.2548889, -0.96322876, -0.0021674633, 0.739946, -0.8323393)
+script = ExtResource("4_272bh")
+
+[node name="Area3D" type="Area3D" parent="CarBase/CameraPivot" unique_id=1892984604]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CarBase/CameraPivot/Area3D" unique_id=1102354783]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.06298828, 0.4099121, 0.05795288)
+shape = SubResource("BoxShape3D_7mycd")
+debug_color = Color(0.934375, 0.1305582, 0.026279286, 0.41960785)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=459855501]
+environment = SubResource("Environment_5vw27")
+
+[node name="buildings" type="Node3D" parent="." unique_id=596683669]
+
+[node name="building_G2" parent="buildings" unique_id=436571027 instance=ExtResource("3_lquwl")]
+transform = Transform3D(-0.99993914, 0, -0.011030346, 0, 1, 0, 0.011030346, 0, -0.99993914, -0.14752293, -0.10072017, 12.178286)
+
+[node name="building_F_withoutBase2" parent="buildings" unique_id=1881884982 instance=ExtResource("4_7mycd")]
+transform = Transform3D(0.07732814, 0, -0.9970057, 0, 1, 0, 0.9970057, 0, 0.07732814, 2.698467, -0.0738889, 8.918757)
+
+[node name="building_E_withoutBase2" parent="buildings" unique_id=1156622688 instance=ExtResource("5_272bh")]
+transform = Transform3D(0.042782433, 0, 0.9990844, 0, 1, 0, -0.9990844, 0, 0.042782433, -1.9616104, -0.041740835, 9.043129)
+
+[connection signal="body_entered" from="CarBase/CameraPivot/Area3D" to="CarBase" method="_on_area_3d_body_entered"]
+[connection signal="body_exited" from="CarBase/CameraPivot/Area3D" to="CarBase" method="_on_area_3d_body_exited"]
