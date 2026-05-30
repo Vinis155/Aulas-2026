@@ -1,5 +1,5 @@
 # =========================================================
-# CAMERA PVP TOPDOWN
+# CAMERA COOP TOPDOWN
 # =========================================================
 extends Camera2D
 
@@ -8,18 +8,15 @@ extends Camera2D
 # CONFIGURAÇÕES
 # =========================================================
 
-# Suavidade da câmera
-@export var smooth_speed := 3.0
-
-# Zoom fixo da câmera
-@export var camera_zoom := 0.6
+const SMOOTH_SPEED := 8.0
+const ZOOM_CLOSE := 2.0   # zoom quando players estão juntos
+const ZOOM_FAR := 1.5     # zoom quando players estão longe
 
 
 # =========================================================
 # VARIÁVEIS
 # =========================================================
 
-# Lista de jogadores
 var players = []
 
 
@@ -27,14 +24,8 @@ var players = []
 # READY
 # =========================================================
 func _ready():
-
-	# Ativa câmera
 	enabled = true
-
-	# Define zoom inicial
-	zoom = Vector2(camera_zoom, camera_zoom)
-
-	# Pega todos jogadores do grupo "player"
+	zoom = Vector2(ZOOM_CLOSE, ZOOM_CLOSE)
 	players = get_tree().get_nodes_in_group("player")
 
 
@@ -42,43 +33,48 @@ func _ready():
 # PROCESS
 # =========================================================
 func _process(delta):
-
-	# Se não existir player
 	if players.size() == 0:
 		return
 
-
 	# =========================================
-	# CENTRO DOS PLAYERS
+	# FILTRA APENAS PLAYERS VIVOS
 	# =========================================
-	var center = Vector2.ZERO
-
-	var valid_players = 0
-
-
-	# Soma posição dos jogadores
+	var alive_players = []
 	for p in players:
+		if is_instance_valid(p) and p.is_alive:
+			alive_players.append(p)
 
-		if is_instance_valid(p):
-
-			center += p.global_position
-
-			valid_players += 1
-
-
-	# Evita divisão por zero
-	if valid_players == 0:
+	if alive_players.size() == 0:
 		return
 
-
-	# Média das posições
-	center /= valid_players
-
+	# =========================================
+	# CENTRO DOS PLAYERS VIVOS
+	# =========================================
+	var center = Vector2.ZERO
+	for p in alive_players:
+		center += p.global_position
+	center /= alive_players.size()
 
 	# =========================================
 	# MOVE CÂMERA SUAVEMENTE
 	# =========================================
-	global_position = global_position.lerp(
-		center,
-		smooth_speed * delta
-	)
+	global_position = global_position.lerp(center, SMOOTH_SPEED * delta)
+
+	# =========================================
+	# ZOOM DINÂMICO
+	# =========================================
+	var target_zoom := ZOOM_CLOSE
+
+	if alive_players.size() >= 2:
+		var dist = alive_players[0].global_position.distance_to(
+			alive_players[1].global_position
+		)
+		# Começa a abrir o zoom a partir de 100px de distância
+		target_zoom = clamp(
+			ZOOM_CLOSE - (dist - 100.0) / 300.0,
+			ZOOM_FAR,
+			ZOOM_CLOSE
+		)
+
+	var new_zoom = lerp(zoom.x, target_zoom, SMOOTH_SPEED * delta)
+	zoom = Vector2(new_zoom, new_zoom)

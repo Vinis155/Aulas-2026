@@ -8,51 +8,44 @@ extends CharacterBody2D
 # VARIÁVEIS EXPORTADAS
 # =========================================================
 
-# Define qual jogador controla esse personagem
 @export var player_id := 1
-
-# Permite trocar as animações/sprites pelo Inspector
 @export var skin_frames : SpriteFrames
+
+# Lanterna
+@export var lantern_energy := 0.8
+@export var lantern_color := Color(1.0, 0.95, 0.7)
+@export var lantern_scale := 0.7
+@export var lantern_position := Vector2(24.0, 2.0)
+@export var lantern_texture_scale := 0.0
 
 
 # =========================================================
 # CONFIGURAÇÕES DO PERSONAGEM
 # =========================================================
 
-# Velocidade de movimento
 var speed = 50
-
-# Guarda direção atual
+var base_speed = 50
 var dir = Vector2.ZERO
-
-# Guarda última direção usada
 var last_direction = "down"
-
-# Vida do jogador
 var health = 3.0
-
-# Dano recebido por hit
 var damage_taken = 0.5
-
-# Verifica se personagem está vivo
 var is_alive = true
-
-# Evita tomar dano várias vezes seguidas
 var can_take_damage = true
+
+# Teia
+var web_hit_count = 0
+var is_slowed = false
+var is_paralyzed = false
 
 
 # =========================================================
 # NODES
 # =========================================================
 
-# AnimatedSprite2D
 @onready var anim: AnimatedSprite2D = $AnimatedSprite2D
-
-# AnimationPlayer
 @onready var animation_player = $AnimationPlayer
-
-# Hand (contém a lanterna)
 @onready var hand = $Hand
+@onready var lantern : PointLight2D = $Hand/PointLight2D
 
 
 # =========================================================
@@ -60,35 +53,47 @@ var can_take_damage = true
 # =========================================================
 func _ready():
 
-	# Se existir skin configurada
-	# aplica no personagem
 	if skin_frames != null:
-
 		anim.sprite_frames = skin_frames
 
-	# Esconde o Sprite2D da lanterna (causa o quadrado visual)
-	var lantern_sprite = get_node_or_null("Hand/PointLight2D/Sprite2D")
-	if lantern_sprite:
-		lantern_sprite.visible = false
-
-	# Luz ambiente fraca ao redor do player
+	_setup_lantern()
 	_add_ambient_light()
 
 
 # =========================================================
-# LUZ AMBIENTE DO PLAYER
+# CONFIGURAR LANTERNA
+# =========================================================
+func _setup_lantern():
+	lantern.texture = load("res://sprites/Flashlight_small_range_sprite_sheet/Lanterna ligada.png")
+	lantern.energy = lantern_energy
+	lantern.color = lantern_color
+	lantern.texture_scale = lantern_scale
+	lantern.shadow_enabled = true
+	lantern.shadow_color = Color(0, 0, 0, 0.8)
+
+
+# =========================================================
+# LUZ AMBIENTE (círculo suave)
 # =========================================================
 func _add_ambient_light():
 
-	var tex = load("res://sprites/Flashlight_small_range_sprite_sheet/Lanterna ligada.png")
-	if tex == null:
-		return
+	var gradient = Gradient.new()
+	gradient.colors = [Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+	gradient.offsets = [0.0, 1.0]
+
+	var grad_tex = GradientTexture2D.new()
+	grad_tex.gradient = gradient
+	grad_tex.fill = GradientTexture2D.FILL_RADIAL
+	grad_tex.fill_from = Vector2(0.5, 0.5)
+	grad_tex.fill_to = Vector2(1.0, 0.5)
+	grad_tex.width = 256
+	grad_tex.height = 256
 
 	var ambient = PointLight2D.new()
-	ambient.texture = tex
-	ambient.energy = 0.3
+	ambient.texture = grad_tex
+	ambient.energy = 0.15
 	ambient.color = Color(1.0, 0.9, 0.75)
-	ambient.texture_scale = 0.15
+	ambient.texture_scale = 0.5
 	add_child(ambient)
 
 
@@ -97,31 +102,12 @@ func _add_ambient_light():
 # =========================================================
 func _physics_process(_delta):
 
-
-	# =========================================
-	# SE ESTIVER MORTO
-	# =========================================
 	if not is_alive:
-
 		move_and_slide()
 		return
 
-
-	# =========================================
-	# MOVIMENTAÇÃO
-	# =========================================
 	move()
-
-
-	# =========================================
-	# ANIMAÇÕES
-	# =========================================
 	animations()
-
-
-	# =========================================
-	# LANTERNA - acompanha o mouse
-	# =========================================
 	rotate_lantern()
 
 
@@ -130,50 +116,56 @@ func _physics_process(_delta):
 # =========================================================
 func move():
 
-	# Vetor de direção
+	if is_paralyzed:
+		velocity = Vector2.ZERO
+		move_and_slide()
+		return
+
 	var input_dir = Vector2.ZERO
 
-
-	# =====================================================
-	# CONTROLES PLAYER 1
-	# =====================================================
 	if player_id == 1:
-
 		input_dir = Input.get_vector(
-			"p1_left",
-			"p1_right",
-			"p1_up",
-			"p1_down"
+			"p1_left", "p1_right",
+			"p1_up", "p1_down"
 		)
 
-
-	# =====================================================
-	# CONTROLES PLAYER 2
-	# =====================================================
 	elif player_id == 2:
-
 		input_dir = Input.get_vector(
-			"p2_left",
-			"p2_right",
-			"p2_up",
-			"p2_down"
+			"p2_left", "p2_right",
+			"p2_up", "p2_down"
 		)
 
-
-	# Salva direção
 	dir = input_dir
-
-
-	# Normaliza diagonal
 	input_dir = input_dir.normalized()
-
-
-	# Aplica velocidade
 	velocity = input_dir * speed
-
-
-	# Move personagem
 	move_and_slide()
+
+
+# =========================================================
+# HIT DA TEIA
+# =========================================================
+func web_hit():
+
+	web_hit_count += 1
+
+	if web_hit_count == 1:
+		is_slowed = true
+		speed = base_speed * 0.4
+		anim.modulate = Color(0.5, 0.8, 1.0)
+
+	elif web_hit_count >= 2:
+		is_paralyzed = true
+		speed = 0
+		anim.modulate = Color(0.3, 0.6, 1.0)
+
+		await get_tree().create_timer(3.0).timeout
+
+		if is_instance_valid(self):
+			is_paralyzed = false
+			is_slowed = false
+			web_hit_count = 0
+			speed = base_speed
+			anim.modulate = Color(1, 1, 1)
 
 
 # =========================================================
@@ -191,92 +183,35 @@ func rotate_lantern():
 # =========================================================
 func animations():
 
-	# =========================================
-	# PERSONAGEM SE MOVENDO
-	# =========================================
 	if velocity != Vector2.ZERO:
 
-
-		# =====================================
-		# PRIORIDADE VERTICAL
-		# =====================================
 		if abs(dir.y) > abs(dir.x):
 
-
-			# =================================
-			# BAIXO
-			# =================================
 			if dir.y > 0:
-
 				anim.play("down")
-
 				last_direction = "down"
-
-
-			# =================================
-			# CIMA
-			# =================================
 			else:
-
 				anim.play("up")
-
 				last_direction = "up"
 
-
-		# =====================================
-		# LADO
-		# =====================================
 		else:
-
 			anim.play("side")
-
 			last_direction = "side"
 
-
-			# =================================
-			# FLIP HORIZONTAL
-			# =================================
-
 			if dir.x > 0:
-
 				anim.flip_h = false
-
 			elif dir.x < 0:
-
 				anim.flip_h = true
 
-
-	# =========================================
-	# PERSONAGEM PARADO
-	# =========================================
 	else:
 
-
-		# =====================================
-		# IDLE DOWN
-		# =====================================
 		if last_direction == "down":
-
 			anim.play("idle_down")
-
-
-		# =====================================
-		# IDLE UP
-		# =====================================
 		elif last_direction == "up":
-
 			anim.play("up")
-
 			anim.stop()
-
 			anim.frame = 0
-
-
-		# =====================================
-		# IDLE SIDE
-		# =====================================
 		elif last_direction == "side":
-
 			anim.play("idle_side")
 
 
@@ -285,42 +220,20 @@ func animations():
 # =========================================================
 func take_damage():
 
-	# Evita múltiplos hits instantâneos
 	if not can_take_damage:
-
 		return
-
 
 	can_take_damage = false
-
-
-	# Remove vida
 	health -= damage_taken
-
-
-	# Toca animação de hit
 	animation_player.play("hit")
 
+	print("Player ", player_id, " Vida atual: ", health)
 
-	print(
-		"Player ",
-		player_id,
-		" Vida atual: ",
-		health
-	)
-
-
-	# Morre se acabar vida
 	if health <= 0:
-
 		die()
-
 		return
 
-
-	# Tempo de invencibilidade
 	await get_tree().create_timer(0.5).timeout
-
 	can_take_damage = true
 
 
@@ -329,39 +242,20 @@ func take_damage():
 # =========================================================
 func die():
 
-	# Evita morrer duas vezes
 	if not is_alive:
 		return
 
-
-	# Marca morto
 	is_alive = false
-
-
-	# Para movimento
 	velocity = Vector2.ZERO
 
+	$CollisionShape2D.set_deferred("disabled", true)
 
-	# Desativa colisão
-	$CollisionShape2D.set_deferred(
-		"disabled",
-		true
-	)
-
-
-	# Toca animação hit
 	animation_player.play("hit")
 
-
-	# Espera animação terminar
 	await animation_player.animation_finished
 
-
-	# Esconde player
 	visible = false
 
-
-	# Verifica game over
 	check_game_over()
 
 
@@ -370,30 +264,15 @@ func die():
 # =========================================================
 func check_game_over():
 
-	# Espera pequeno delay
 	await get_tree().create_timer(0.2).timeout
 
-
-	# Pega jogadores
 	var players = get_tree().get_nodes_in_group("player")
-
-
-	# Verifica vivos
 	var alive_count = 0
 
-
 	for p in players:
+		if is_instance_valid(p) and p.is_alive:
+			alive_count += 1
 
-		if is_instance_valid(p):
-
-			if p.is_alive:
-
-				alive_count += 1
-
-
-	# Se ninguém estiver vivo
 	if alive_count <= 0:
-
 		await get_tree().create_timer(1.0).timeout
-
 		get_tree().reload_current_scene()

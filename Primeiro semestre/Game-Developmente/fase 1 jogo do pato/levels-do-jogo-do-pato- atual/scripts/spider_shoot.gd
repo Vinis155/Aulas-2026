@@ -10,6 +10,14 @@ extends CharacterBody2D
 @export var web_scene : PackedScene
 
 # =========================================================
+# VIDA
+# =========================================================
+@export var max_health := 3.0
+var health := max_health
+var is_alive := true
+var can_take_damage := true
+
+# =========================================================
 # VARIÁVEIS
 # =========================================================
 var target = null
@@ -18,11 +26,13 @@ var timer = 0.0
 var can_shoot = true
 var is_shooting = false
 var last_flip = false
+var knockback = Vector2.ZERO
 
 # =========================================================
 # NODES
 # =========================================================
 @onready var anim = $AnimatedSprite2D
+@onready var animation_player = $AnimationPlayer
 @onready var shoot_point = $Marker2D
 @onready var shoot_timer = $ShootTimer
 
@@ -39,6 +49,16 @@ func _ready():
 # PROCESS
 # =========================================================
 func _physics_process(delta):
+
+	if not is_alive:
+		return
+
+	# Aplica knockback
+	if knockback != Vector2.ZERO:
+		velocity = knockback
+		knockback = knockback.move_toward(Vector2.ZERO, 300 * delta)
+		move_and_slide()
+		return
 
 	if target != null and is_instance_valid(target) and target.is_alive:
 		var distance = global_position.distance_to(target.global_position)
@@ -59,9 +79,6 @@ func _physics_process(delta):
 	velocity = direction * speed
 	move_and_slide()
 
-	# =========================================
-	# COLISÕES
-	# =========================================
 	if get_slide_collision_count() > 0:
 		for i in range(get_slide_collision_count()):
 			var collision = get_slide_collision(i)
@@ -128,6 +145,10 @@ func shoot_web():
 # ANIMAÇÕES
 # =========================================================
 func animations():
+
+	if not is_alive:
+		return
+
 	anim.play("walk")
 
 	if is_shooting:
@@ -143,6 +164,46 @@ func animations():
 		elif direction == Vector2.RIGHT:
 			anim.flip_h = true
 			last_flip = true
+
+
+# =========================================================
+# RECEBER DANO
+# =========================================================
+func take_damage(knock_dir = Vector2.ZERO):
+
+	if not can_take_damage or not is_alive:
+		return
+
+	can_take_damage = false
+	health -= 1.0
+	knockback = knock_dir * 200.0
+
+	print("SpiderShoot vida: ", health)
+
+	if health <= 0:
+		die()
+		return
+
+	animation_player.play("hit")
+
+	await get_tree().create_timer(0.4).timeout
+	can_take_damage = true
+
+
+# =========================================================
+# MORTE
+# =========================================================
+func die():
+
+	is_alive = false
+	velocity = Vector2.ZERO
+
+	$CollisionShape2D.set_deferred("disabled", true)
+
+	anim.play("die")
+
+	await get_tree().create_timer(1.0).timeout
+	queue_free()
 
 
 # =========================================================

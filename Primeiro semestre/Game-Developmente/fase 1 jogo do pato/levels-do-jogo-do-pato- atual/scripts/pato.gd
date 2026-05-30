@@ -17,6 +17,7 @@ extends CharacterBody2D
 # =========================================================
 
 var speed = 50
+var base_speed = 50
 var dir = Vector2.ZERO
 var last_direction = "down"
 var health = 3.0
@@ -27,6 +28,11 @@ var can_take_damage = true
 # Espada
 var can_attack = true
 var is_attacking = false
+
+# Teia
+var web_hit_count = 0
+var is_slowed = false
+var is_paralyzed = false
 
 
 # =========================================================
@@ -39,7 +45,7 @@ var is_attacking = false
 @onready var sword = $Hand/Sword
 @onready var sword_sprite = $Hand/Sword/Sprite2D
 @onready var sword_collision = $Hand/Sword/CollisionShape2D
-@onready var lantern = $Hand/PointLight2D
+@onready var lantern = get_node_or_null("Hand/PointLight2D")
 
 
 # =========================================================
@@ -50,20 +56,21 @@ func _ready():
 	if skin_frames != null:
 		anim.sprite_frames = skin_frames
 
-	# Player 1 = espada, desativa lanterna
 	if player_id == 1:
-		lantern.visible = false
+		if lantern:
+			lantern.visible = false
 		sword.monitoring = true
+		sword.monitorable = true
 		sword_collision.disabled = true
 
-	# Player 2 = lanterna, desativa espada
 	elif player_id == 2:
-		lantern.visible = true
+		if lantern:
+			lantern.visible = true
 		sword.visible = false
 		sword.monitoring = false
+		sword.monitorable = false
 		sword_collision.disabled = true
 
-	# Luz ambiente fraca ao redor do player
 	_add_ambient_light()
 
 
@@ -86,7 +93,7 @@ func _add_ambient_light():
 
 	var ambient = PointLight2D.new()
 	ambient.texture = grad_tex
-	ambient.energy = 0.35
+	ambient.energy = 0.15
 	ambient.color = Color(1.0, 0.9, 0.75)
 	ambient.texture_scale = 0.5
 	add_child(ambient)
@@ -105,6 +112,7 @@ func _physics_process(delta):
 	animations()
 
 	if player_id == 1:
+		update_hand_direction()
 		attack()
 
 	elif player_id == 2:
@@ -115,6 +123,11 @@ func _physics_process(delta):
 # MOVIMENTAÇÃO
 # =========================================================
 func move():
+
+	if is_paralyzed:
+		velocity = Vector2.ZERO
+		move_and_slide()
+		return
 
 	var input_dir = Vector2.ZERO
 
@@ -137,6 +150,63 @@ func move():
 
 
 # =========================================================
+# HIT DA TEIA
+# =========================================================
+func web_hit():
+
+	web_hit_count += 1
+
+	if web_hit_count == 1:
+		is_slowed = true
+		speed = base_speed * 0.4
+		anim.modulate = Color(0.5, 0.8, 1.0)
+
+	elif web_hit_count >= 2:
+		is_paralyzed = true
+		speed = 0
+		anim.modulate = Color(0.3, 0.6, 1.0)
+
+		await get_tree().create_timer(3.0).timeout
+
+		if is_instance_valid(self):
+			is_paralyzed = false
+			is_slowed = false
+			web_hit_count = 0
+			speed = base_speed
+			anim.modulate = Color(1, 1, 1)
+
+
+# =========================================================
+# DIREÇÃO DO HAND - PLAYER 1
+# =========================================================
+func update_hand_direction():
+
+	var normalized_rotation = fmod(hand.rotation, TAU)
+	if normalized_rotation > PI:
+		normalized_rotation -= TAU
+	elif normalized_rotation < -PI:
+		normalized_rotation += TAU
+	if normalized_rotation > PI / 2 or normalized_rotation < -PI / 2:
+		sword_sprite.flip_v = true
+	else:
+		sword_sprite.flip_v = false
+
+	if is_attacking:
+		return
+
+	var sword_dir = Input.get_vector(
+		"p1_sword_left",
+		"p1_sword_right",
+		"p1_sword_up",
+		"p1_sword_down"
+	)
+
+	if sword_dir.length() > 0.2:
+		var target = global_position + sword_dir * 100.0
+		hand.look_at(target)
+
+
+# =========================================================
 # ATAQUE - PLAYER 1
 # =========================================================
 func attack():
@@ -145,26 +215,36 @@ func attack():
 
 		can_attack = false
 		is_attacking = true
-
-		# Ativa hitbox
 		sword_collision.disabled = false
 
-		# Rotaciona espada em arco
+		var base_angle = hand.rotation
+		var start_angle = base_angle + deg_to_rad(60.0)
+		var end_angle = base_angle - deg_to_rad(60.0)
+
+		hand.rotation = start_angle
+
 		var tween = create_tween()
 		tween.tween_property(
 			hand,
-			"rotation_degrees",
-			hand.rotation_degrees + 180.0,
-			0.25
+			"rotation",
+			end_angle,
+			0.2
 		)
 
 		await tween.finished
 
-		# Desativa hitbox
+		hand.rotation = base_angle
 		sword_collision.disabled = true
 		is_attacking = false
 
-		# Cooldown
+		var nr = fmod(hand.rotation, TAU)
+		if nr > PI: nr -= TAU
+		elif nr < -PI: nr += TAU
+		if nr > PI / 2 or nr < -PI / 2:
+			sword_sprite.flip_v = true
+		else:
+			sword_sprite.flip_v = false
+
 		await get_tree().create_timer(0.3).timeout
 		can_attack = true
 
@@ -174,7 +254,6 @@ func attack():
 # =========================================================
 func rotate_lantern():
 
-	# Aponta para o mouse
 	var mouse_pos = get_global_mouse_position()
 	var angle = (mouse_pos - global_position).angle()
 	hand.rotation = angle
@@ -275,25 +354,32 @@ func check_game_over():
 
 
 # =========================================================
-# ESPADA - COLISÃO
+# ESPADA - COLISÃO COM CORPO
 # =========================================================
 func _on_sword_body_entered(body):
 
+	if body.is_in_group("player"):
+		return
+
 	if body.is_in_group("enemy") and is_attacking:
-
-		# Empurra inimigo
 		var push_dir = (body.global_position - global_position).normalized()
-		body.velocity += push_dir * 150.0
-
-		# Dano no inimigo
 		if body.has_method("take_damage"):
-			body.take_damage()
+			body.take_damage(push_dir)
+
+
+# =========================================================
+# ESPADA - COLISÃO COM ÁREA (TEIA)
+# =========================================================
+func _on_sword_area_entered(area):
+
+	if area.is_in_group("web") and is_attacking:
+		area.queue_free()
 
 
 func _on_web_body_entered(body: Node2D) -> void:
 
 	if body.is_in_group("player"):
-		body.take_damage()
+		body.web_hit()
 		queue_free()
 
 	elif body.is_in_group("wall"):

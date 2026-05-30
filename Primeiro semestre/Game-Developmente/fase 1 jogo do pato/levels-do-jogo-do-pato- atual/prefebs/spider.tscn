@@ -113,7 +113,68 @@ size = Vector2(11, 7)
 [sub_resource type="CircleShape2D" id="CircleShape2D_lfy8a"]
 radius = 45.01111
 
-[node name="Spider" type="CharacterBody2D" unique_id=1274369284]
+[sub_resource type="Animation" id="Animation_jeavk"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:scale")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_atxbw"]
+resource_name = "hit"
+length = 0.2
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1006, 0.2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1, 0.09019608, 0, 1), Color(1, 1, 1, 1)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:scale")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.1006, 0.2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(1, 1), Vector2(0.485, 1.785), Vector2(1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_ydqxm"]
+_data = {
+&"RESET": SubResource("Animation_jeavk"),
+&"hit": SubResource("Animation_atxbw")
+}
+
+[node name="Spider" type="CharacterBody2D" unique_id=1274369284 groups=["enemy"]]
 collision_layer = 4
 collision_mask = 3
 script = ExtResource("1_jeavk")
@@ -127,7 +188,6 @@ autoplay = "walk"
 frame_progress = 0.5709901
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1527805848]
-visible = false
 position = Vector2(-1, 10)
 shape = SubResource("RectangleShape2D_kb5eu")
 debug_color = Color(0.9607843, 0, 0, 0.41960785)
@@ -136,10 +196,12 @@ debug_color = Color(0.9607843, 0, 0, 0.41960785)
 position = Vector2(0, 7)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="VisionArea" unique_id=1496835437]
-visible = false
 position = Vector2(-1, 3)
 shape = SubResource("CircleShape2D_lfy8a")
 debug_color = Color(2.6471912e-06, 0.6323185, 0.45620716, 0.41960785)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=804420902]
+libraries/ = SubResource("AnimationLibrary_ydqxm")
 
 [connection signal="body_entered" from="VisionArea" to="." method="_on_vision_area_body_entered"]
 [connection signal="body_exited" from="VisionArea" to="." method="_on_vision_area_body_exited"]
