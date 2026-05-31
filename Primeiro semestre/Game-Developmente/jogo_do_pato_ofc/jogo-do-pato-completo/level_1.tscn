@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://cyvikisidqdph"]
 
+[ext_resource type="PackedScene" uid="uid://cxhudscene001" path="res://scenes/hud.tscn" id="99_hud01"]
 [ext_resource type="Texture2D" uid="uid://dn0byxa340wjg" path="res://assets/Tilesets/tileset_purple.png" id="1_27bay"]
 [ext_resource type="Texture2D" uid="uid://dvo3tn55s28id" path="res://assets/Tilesets/tileset_brown.png" id="2_sof0w"]
 [ext_resource type="Script" uid="uid://cwpf12b0wwi8w" path="res://scripts/pato.gd" id="3_ggavl"]
@@ -589,3 +590,6 @@ metadata/_edit_group_ = true
 [connection signal="body_entered" from="Door" to="Door" method="_on_body_entered"]
 
 [editable path="Door"]
+
+[node name="HUD" parent="." instance=ExtResource("99_hud01")]
+level_number = 1

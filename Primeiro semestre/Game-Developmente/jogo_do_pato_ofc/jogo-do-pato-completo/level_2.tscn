@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://keyakfvhwojt"]
 
+[ext_resource type="PackedScene" uid="uid://cxhudscene001" path="res://scenes/hud.tscn" id="99_hud02"]
 [ext_resource type="Texture2D" uid="uid://dn0byxa340wjg" path="res://assets/Tilesets/tileset_purple.png" id="1_5kfcu"]
 [ext_resource type="Texture2D" uid="uid://dvo3tn55s28id" path="res://assets/Tilesets/tileset_brown.png" id="2_i558w"]
 [ext_resource type="Script" uid="uid://cwpf12b0wwi8w" path="res://scripts/pato.gd" id="3_cuxq2"]
@@ -680,3 +681,6 @@ next_level = ExtResource("22_wvr33")
 metadata/_edit_group_ = true
 
 [connection signal="body_entered" from="Pato/Hand/Sword" to="Pato" method="_on_sword_body_entered"]
+
+[node name="HUD" parent="." instance=ExtResource("99_hud02")]
+level_number = 2
