@@ -1,6 +1,5 @@
 [gd_scene format=3 uid="uid://cyvikisidqdph"]
 
-[ext_resource type="PackedScene" uid="uid://cxhudscene001" path="res://scenes/hud.tscn" id="99_hud01"]
 [ext_resource type="Texture2D" uid="uid://dn0byxa340wjg" path="res://assets/Tilesets/tileset_purple.png" id="1_27bay"]
 [ext_resource type="Texture2D" uid="uid://dvo3tn55s28id" path="res://assets/Tilesets/tileset_brown.png" id="2_sof0w"]
 [ext_resource type="Script" uid="uid://cwpf12b0wwi8w" path="res://scripts/pato.gd" id="3_ggavl"]
@@ -17,6 +16,7 @@
 [ext_resource type="Texture2D" uid="uid://1acvoo0rfwds" path="res://sprites/Tartaruga/costas/Tartaruga pixelada em movimento edle.png" id="21_b6mmh"]
 [ext_resource type="PackedScene" uid="uid://keyakfvhwojt" path="res://level_2.tscn" id="22_lfy8a"]
 [ext_resource type="Texture2D" uid="uid://drm8xt6v441gq" path="res://sprites/Tartaruga/costas/Tartaruga vista de tr#U00e1s em pixels edle.png" id="22_ttn6t"]
+[ext_resource type="PackedScene" uid="uid://cxhudscene001" path="res://scenes/hud.tscn" id="99_hud01"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_hbghi"]
 texture = ExtResource("1_27bay")
@@ -585,11 +585,10 @@ scale = Vector2(0.8, 0.8)
 next_level = ExtResource("22_lfy8a")
 metadata/_edit_group_ = true
 
+[node name="HUD" parent="." unique_id=1201743627 instance=ExtResource("99_hud01")]
+
 [connection signal="body_entered" from="Pato/Hand/Sword" to="Pato" method="_on_sword_body_entered"]
 [connection signal="timeout" from="SpiderSpawner/Timer" to="SpiderSpawner" method="_on_timer_timeout"]
 [connection signal="body_entered" from="Door" to="Door" method="_on_body_entered"]
 
 [editable path="Door"]
-
-[node name="HUD" parent="." instance=ExtResource("99_hud01")]
-level_number = 1

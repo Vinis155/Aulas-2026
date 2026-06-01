@@ -1,27 +1,17 @@
 # =========================================================
-# PERSONAGEM TOPDOWN
+# PERSONAGEM TOPDOWN - TARTARUGA
 # =========================================================
 extends CharacterBody2D
 
 
-# =========================================================
-# VARIÁVEIS EXPORTADAS
-# =========================================================
-
 @export var player_id := 1
 @export var skin_frames : SpriteFrames
 
-# Lanterna
 @export var lantern_energy := 0.8
 @export var lantern_color := Color(1.0, 0.95, 0.7)
 @export var lantern_scale := 0.7
 @export var lantern_position := Vector2(24.0, 2.0)
 @export var lantern_texture_scale := 0.0
-
-
-# =========================================================
-# CONFIGURAÇÕES DO PERSONAGEM
-# =========================================================
 
 var speed = 50
 var base_speed = 50
@@ -32,15 +22,11 @@ var damage_taken = 0.5
 var is_alive = true
 var can_take_damage = true
 
-# Teia
 var web_hit_count = 0
 var is_slowed = false
 var is_paralyzed = false
 
-
-# =========================================================
-# NODES
-# =========================================================
+var last_lan_angle := 0.0
 
 @onready var anim: AnimatedSprite2D = $AnimatedSprite2D
 @onready var animation_player = $AnimationPlayer
@@ -48,21 +34,13 @@ var is_paralyzed = false
 @onready var lantern : PointLight2D = $Hand/PointLight2D
 
 
-# =========================================================
-# READY
-# =========================================================
 func _ready():
-
 	if skin_frames != null:
 		anim.sprite_frames = skin_frames
-
 	_setup_lantern()
 	_add_ambient_light()
 
 
-# =========================================================
-# CONFIGURAR LANTERNA
-# =========================================================
 func _setup_lantern():
 	lantern.texture = load("res://sprites/Flashlight_small_range_sprite_sheet/Lanterna ligada.png")
 	lantern.energy = lantern_energy
@@ -72,11 +50,7 @@ func _setup_lantern():
 	lantern.shadow_color = Color(0, 0, 0, 0.8)
 
 
-# =========================================================
-# LUZ AMBIENTE (círculo suave)
-# =========================================================
 func _add_ambient_light():
-
 	var gradient = Gradient.new()
 	gradient.colors = [Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
 	gradient.offsets = [0.0, 1.0]
@@ -97,43 +71,31 @@ func _add_ambient_light():
 	add_child(ambient)
 
 
-# =========================================================
-# PHYSICS PROCESS
-# =========================================================
 func _physics_process(_delta):
-
 	if not is_alive:
 		move_and_slide()
 		return
-
 	move()
 	animations()
 	rotate_lantern()
 
 
-# =========================================================
-# MOVIMENTAÇÃO
-# =========================================================
 func move():
-
 	if is_paralyzed:
 		velocity = Vector2.ZERO
 		move_and_slide()
 		return
 
+	var device = GamepadManager.get_device(player_id)
 	var input_dir = Vector2.ZERO
 
-	if player_id == 1:
-		input_dir = Input.get_vector(
-			"p1_left", "p1_right",
-			"p1_up", "p1_down"
+	if device != -1:
+		input_dir = Vector2(
+			Input.get_joy_axis(device, JOY_AXIS_LEFT_X),
+			Input.get_joy_axis(device, JOY_AXIS_LEFT_Y)
 		)
-
-	elif player_id == 2:
-		input_dir = Input.get_vector(
-			"p2_left", "p2_right",
-			"p2_up", "p2_down"
-		)
+		if input_dir.length() < 0.2:
+			input_dir = Vector2.ZERO
 
 	dir = input_dir
 	input_dir = input_dir.normalized()
@@ -141,11 +103,7 @@ func move():
 	move_and_slide()
 
 
-# =========================================================
-# HIT DA TEIA
-# =========================================================
 func web_hit():
-
 	web_hit_count += 1
 
 	if web_hit_count == 1:
@@ -168,43 +126,37 @@ func web_hit():
 			anim.modulate = Color(1, 1, 1)
 
 
-# =========================================================
-# LANTERNA - aponta para o mouse
-# =========================================================
 func rotate_lantern():
+	var device = GamepadManager.get_device(player_id)
+	if device == -1:
+		return
 
-	var mouse_pos = get_global_mouse_position()
-	var angle = (mouse_pos - global_position).angle()
-	hand.rotation = angle
+	var lan_dir = Vector2(
+		Input.get_joy_axis(device, JOY_AXIS_RIGHT_X),
+		Input.get_joy_axis(device, JOY_AXIS_RIGHT_Y)
+	)
+	if lan_dir.length() > 0.2:
+		last_lan_angle = lan_dir.angle()
+	hand.rotation = last_lan_angle
 
 
-# =========================================================
-# ANIMAÇÕES
-# =========================================================
 func animations():
-
 	if velocity != Vector2.ZERO:
-
 		if abs(dir.y) > abs(dir.x):
-
 			if dir.y > 0:
 				anim.play("down")
 				last_direction = "down"
 			else:
 				anim.play("up")
 				last_direction = "up"
-
 		else:
 			anim.play("side")
 			last_direction = "side"
-
 			if dir.x > 0:
 				anim.flip_h = false
 			elif dir.x < 0:
 				anim.flip_h = true
-
 	else:
-
 		if last_direction == "down":
 			anim.play("idle_down")
 		elif last_direction == "up":
@@ -215,11 +167,7 @@ func animations():
 			anim.play("idle_side")
 
 
-# =========================================================
-# RECEBER DANO
-# =========================================================
 func take_damage():
-
 	if not can_take_damage:
 		return
 
@@ -237,33 +185,20 @@ func take_damage():
 	can_take_damage = true
 
 
-# =========================================================
-# MORTE
-# =========================================================
 func die():
-
 	if not is_alive:
 		return
 
 	is_alive = false
 	velocity = Vector2.ZERO
-
 	$CollisionShape2D.set_deferred("disabled", true)
-
 	animation_player.play("hit")
-
 	await animation_player.animation_finished
-
 	visible = false
-
 	check_game_over()
 
 
-# =========================================================
-# GAME OVER
-# =========================================================
 func check_game_over():
-
 	await get_tree().create_timer(0.2).timeout
 
 	var players = get_tree().get_nodes_in_group("player")

@@ -123,32 +123,26 @@ func _physics_process(delta):
 # MOVIMENTAÇÃO
 # =========================================================
 func move():
-
 	if is_paralyzed:
 		velocity = Vector2.ZERO
 		move_and_slide()
 		return
 
+	var device = GamepadManager.get_device(player_id)
 	var input_dir = Vector2.ZERO
 
-	if player_id == 1:
-		input_dir = Input.get_vector(
-			"p1_left", "p1_right",
-			"p1_up", "p1_down"
+	if device != -1:
+		input_dir = Vector2(
+			Input.get_joy_axis(device, JOY_AXIS_LEFT_X),
+			Input.get_joy_axis(device, JOY_AXIS_LEFT_Y)
 		)
-
-	elif player_id == 2:
-		input_dir = Input.get_vector(
-			"p2_left", "p2_right",
-			"p2_up", "p2_down"
-		)
+		if input_dir.length() < 0.2:
+			input_dir = Vector2.ZERO
 
 	dir = input_dir
 	input_dir = input_dir.normalized()
 	velocity = input_dir * speed
 	move_and_slide()
-
-
 # =========================================================
 # HIT DA TEIA
 # =========================================================
@@ -180,7 +174,6 @@ func web_hit():
 # DIREÇÃO DO HAND - PLAYER 1
 # =========================================================
 func update_hand_direction():
-
 	var normalized_rotation = fmod(hand.rotation, TAU)
 	if normalized_rotation > PI:
 		normalized_rotation -= TAU
@@ -194,13 +187,14 @@ func update_hand_direction():
 	if is_attacking:
 		return
 
-	var sword_dir = Input.get_vector(
-		"p1_sword_left",
-		"p1_sword_right",
-		"p1_sword_up",
-		"p1_sword_down"
-	)
+	var device = GamepadManager.get_device(player_id)
+	if device == -1:
+		return
 
+	var sword_dir = Vector2(
+		Input.get_joy_axis(device, JOY_AXIS_RIGHT_X),
+		Input.get_joy_axis(device, JOY_AXIS_RIGHT_Y)
+	)
 	if sword_dir.length() > 0.2:
 		var target = global_position + sword_dir * 100.0
 		hand.look_at(target)
@@ -210,9 +204,11 @@ func update_hand_direction():
 # ATAQUE - PLAYER 1
 # =========================================================
 func attack():
+	var device = GamepadManager.get_device(player_id)
+	if device == -1:
+		return
 
-	if Input.is_action_just_pressed("p1_attack") and can_attack:
-
+	if Input.is_joy_button_pressed(device, JOY_BUTTON_RIGHT_SHOULDER) and can_attack:
 		can_attack = false
 		is_attacking = true
 		sword_collision.disabled = false
@@ -224,12 +220,7 @@ func attack():
 		hand.rotation = start_angle
 
 		var tween = create_tween()
-		tween.tween_property(
-			hand,
-			"rotation",
-			end_angle,
-			0.2
-		)
+		tween.tween_property(hand, "rotation", end_angle, 0.2)
 
 		await tween.finished
 
