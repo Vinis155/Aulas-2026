@@ -428,12 +428,10 @@ frame_progress = 0.95318824
 [node name="Area2D" type="Area2D" parent="Player" unique_id=1778541223]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player/Area2D" unique_id=608894982]
-visible = false
 position = Vector2(1, 0)
 shape = SubResource("CapsuleShape2D_choun")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player" unique_id=523312363]
-visible = false
 position = Vector2(1, -1)
 shape = SubResource("CapsuleShape2D_ya4ey")
 debug_color = Color(0.57832223, 0.5530876, 0, 0.41960785)
